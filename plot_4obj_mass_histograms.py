@@ -13,6 +13,11 @@ import os
 import re
 from collections import defaultdict
 
+
+def dotprod_T(p1, p2):
+    """Calculate the dot product of two 4-vectors."""
+    return (p1[:, 1] * p2[:, 1] + p1[:, 2] * p2[:, 2])
+
 # Configuration
 data_dir = 'simulation_npz_data/'
 output_base_dir = 'mass_histograms/'
@@ -128,6 +133,25 @@ for obs_name, obs_type, particle_keys, x_bounds, bin_width in observable_configs
                         p_squared = total_px**2 + total_py**2 + total_pz**2
                         values = np.sqrt(np.maximum(total_E**2 - p_squared, 0))
                         obs_label = 'invariant mass [GeV]'
+
+                    if obs_name == '4obj_mass':
+                        pT1 = np.sqrt(dotprod_T(particle_data['j1'], particle_data['j1']))
+                        pT2 = np.sqrt(dotprod_T(particle_data['j2'], particle_data['j2']))
+                        pTlW= np.sqrt(dotprod_T(particle_data['lW'], particle_data['lW']))
+                        S=0.92
+                        C=0.04
+                        sig1 = pT1*np.sqrt(S**2/pT1+C**2)
+                        sig2 = pT2*np.sqrt(S**2/pT2+C**2)
+                        a11 = dotprod_T(particle_data['j1'], particle_data['lW'])
+                        a12 = dotprod_T(particle_data['j2'], particle_data['lW'])
+                        a21 = pT1**2/sig1**2
+                        a22 = -(pT2**2/sig2**2)*dotprod_T(particle_data['j1'], particle_data['lW'])/dotprod_T(particle_data['j2'], particle_data['lW'])
+                        d1 = -pTlW**2-dotprod_T(particle_data['lW'], particle_data['lN'])
+                        d2 = pT1**2/sig1**2-(pT2**2/sig2**2)*dotprod_T(particle_data['j1'], particle_data['lW'])/dotprod_T(particle_data['j2'], particle_data['lW'])
+                        s1 = (a22*d1-a12*d2)/(a11*a22-a12*a21)
+                        s2 = (a11*d2-a21*d1)/(a11*a22-a12*a21)
+                        
+
                         
                     elif obs_type == 'pt':
                         # Transverse momentum
